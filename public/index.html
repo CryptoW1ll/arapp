@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Web AR Debug</title>
+    <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .ar-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+        }
+        .status-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="min-h-screen bg-gray-900" id="main-content">
+        <!-- Header Section -->
+        <header class="p-4 bg-gray-800 text-white">
+            <h1 class="text-2xl font-bold">Web AR Debugger</h1>
+            <p class="text-sm text-gray-400">Scan the Hiro marker to see the 3D model</p>
+        </header>
+
+        <!-- Main Content -->
+        <main class="container mx-auto p-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Instructions Panel -->
+                <div id="instructions" class="bg-gray-800 p-4 rounded-lg">
+                    <h2 class="text-xl font-semibold mb-4">How to Use</h2>
+                    <ol class="space-y-2 text-gray-300">
+                        <li>1. Open this page in your mobile browser</li>
+                        <li>2. Allow camera access when prompted</li>
+                        <li>3. Point your camera at the Hiro marker</li>
+                        <li>4. Watch the 3D model appear!</li>
+                    </ol>
+                </div>
+            </div>
+
+            <!-- Start AR Button -->
+            <div class="text-center mt-4">
+                <button id="start-ar" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-full shadow-lg">Start AR</button>
+            </div>
+        </main>
+    </div>
+
+    <!-- AR Scene -->
+    <div class="ar-container" id="ar-container">
+        <a-scene embedded arjs="sourceType: webcam; trackingMethod: best; smooth: true;" >
+            <a-marker id="ar-marker" preset="hiro">
+                <!-- <a-obj-model src="./assets/FinalBaseMesh.obj" scale="0.5 0.5 0.5" position="0 -15 0" rotation="270 0 0"></a-obj-model> -->
+
+                <!-- x: The position along the horizontal axis (left/right). -->
+                <!-- y: The position along the vertical axis (up/down). -->
+                <!-- z: The position along the depth axis (forward/backward). -->
+                <a-obj-model src="./assets/FinalBaseMesh.obj" scale="3 3 3" position="0 -100 0" rotation="270 0 0"></a-obj-model>
+
+                <!-- import glb -->
+                <a-entity gltf-model="./assets/Character_Hotdog_01.glb" scale="0.5 0.5 0.5" position="0 -15 0" rotation="270 0 0"></a-entity>
+                
+            </a-marker>
+            <!-- <a-entity camera></a-entity> -->
+            <a-entity camera fov="80"></a-entity>
+
+            <!-- <a-entity camera position="0 1.5 3" fov="80"></a-entity> -->
+        </a-scene>
+    </div>
+
+    <!-- Status Indicator -->
+    <div class="status-indicator">
+        <p id="status-message" class="text-sm font-medium">Waiting for marker...</p>
+    </div>
+
+    <!-- Audio Asset -->
+    <audio id="marker-audio" src="./assets/audio/9_Stars.mp3"></audio>
+
+    <script>
+        document.querySelector("#ar-marker").addEventListener("markerFound", () => {
+            document.getElementById('status-message').textContent = "Marker detected! 🎯";
+            document.getElementById('status-message').classList.add('text-green-400');
+
+            // Play audio when marker is detected
+            document.getElementById("marker-audio").play();
+        });
+
+        document.querySelector("#ar-marker").addEventListener("markerLost", () => {
+            document.getElementById('status-message').textContent = "Marker lost! 😞";
+            document.getElementById('status-message').classList.remove('text-green-400');
+        });
+
+        document.getElementById("start-ar").addEventListener("click", function () {
+            document.getElementById("main-content").style.display = "none";
+            document.getElementById("ar-container").style.display = "block";
+        });
+    </script>
+</body>
+</html>
