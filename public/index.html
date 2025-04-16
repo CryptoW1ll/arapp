@@ -3,113 +3,333 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Web AR Debug</title>
+    <title>Web AR Debug - Model at Center</title>
     <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            background-color: #1a1a1a;
-            color: #ffffff;
-        }
-        .ar-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: none;
-        }
-        .status-indicator {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 10px;
-            border-radius: 8px;
-        }
+        body { margin: 0; background-color: #1a1a1a; color: #ffffff; font-family: sans-serif; }
+        body.overflow-hidden { overflow: hidden !important; }
+        .ar-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: none; }
+        .status-indicator { position: fixed; top: 20px; right: 20px; background: rgba(0, 0, 0, 0.6); color: white; padding: 10px 15px; border-radius: 8px; z-index: 10; display: none; font-size: 0.875rem; }
+        a-scene[embedded] { height: 100%; width: 100%; }
     </style>
 </head>
 <body>
-    <div class="min-h-screen bg-gray-900" id="main-content">
-        <!-- Header Section -->
-        <header class="p-4 bg-gray-800 text-white">
-            <h1 class="text-2xl font-bold">Web AR Debugger</h1>
-            <p class="text-sm text-gray-400">Scan the Hiro marker to see the 3D model</p>
-        </header>
-
-        <!-- Main Content -->
-        <main class="container mx-auto p-4">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- Instructions Panel -->
-                <div id="instructions" class="bg-gray-800 p-4 rounded-lg">
-                    <h2 class="text-xl font-semibold mb-4">How to Use</h2>
-                    <ol class="space-y-2 text-gray-300">
-                        <li>1. Open this page in your mobile browser</li>
-                        <li>2. Allow camera access when prompted</li>
-                        <li>3. Point your camera at the Hiro marker</li>
-                        <li>4. Watch the 3D model appear!</li>
-                    </ol>
-                </div>
+    <!-- Initial Content -->
+    <div class="min-h-screen bg-gray-900 text-center" id="main-content">
+        <header class="p-4 bg-gray-800 text-white shadow-md">
+             <!-- Div for Business Logo -->
+            <div class="flex justify-center mb-4">
+                <img src="./assets/OriginalLogo.png" alt="Business Logo" class="w-32 h-32 sm:w-48 sm:h-48 shadow-lg">
             </div>
-
-            <!-- Start AR Button -->
-            <div class="text-center mt-4">
-                <button id="start-ar" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-full shadow-lg">Start AR</button>
+        
+            <h1 class="text-xl sm:text-2xl font-bold">Matariki Augmented Reality</h1>
+            <p class="text-xs sm:text-sm text-gray-400">Enter a maori phrase here...</p>
+        </header>
+       
+        <main class="container mx-auto p-4">
+           
+             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <div id="instructions" class="bg-gray-800 p-4 rounded-lg shadow">
+                     <h2 class="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">Instructions</h2>
+                     <ol class="list-decimal list-inside space-y-2 text-sm text-gray-300">
+                         <li>Click "Start"</li>
+                         <li>Accept Camera Permissions</li> <!-- User expects permission request after click -->
+                         <li>Point camera at the Constellation Markers.</li>
+                        <li>The Matariki marker example is below</li>
+                     </ol>
+                 </div>
+                 <div class="bg-gray-800 p-5 shadow flex items-center justify-center">
+                    <img src="./assets/patt/matariki-pattern-marker.png" alt="Matariki Constellation" class="w-64 h-64 rounded-lg shadow-lg">
+                 </div>
+             </div>
+            <div class="text-center mt-6 sm:mt-8">
+                <button id="start-ar" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 sm:py-3 sm:px-8 rounded-full shadow-lg transition duration-200 ease-in-out transform hover:scale-105">Start</button>
             </div>
         </main>
     </div>
 
     <!-- AR Scene -->
     <div class="ar-container" id="ar-container">
-        <a-scene embedded arjs="sourceType: webcam; trackingMethod: best; smooth: true;" >
-            <a-marker id="ar-marker" preset="hiro">
-                <!-- <a-obj-model src="./assets/FinalBaseMesh.obj" scale="0.5 0.5 0.5" position="0 -15 0" rotation="270 0 0"></a-obj-model> -->
+        <!-- REMOVED arjs attribute here - will be added by JS -->
+        <a-scene id="ar-scene" embedded renderer="colorManagement: true;">
+            <a-marker id="hiro-marker" preset="hiro">
 
-                <!-- x: The position along the horizontal axis (left/right). -->
-                <!-- y: The position along the vertical axis (up/down). -->
-                <!-- z: The position along the depth axis (forward/backward). -->
-                <a-obj-model src="./assets/FinalBaseMesh.obj" scale="3 3 3" position="0 -100 0" rotation="270 0 0"></a-obj-model>
+                <!-- == Debug Grid Start == -->
+                <a-entity id="debug-position-grid">
+                    <!-- Variables for grid appearance -->
+                    <a-variable name="cubeScale" value="0.2 0.2 0.2"></a-variable>
+                    <a-variable name="textScale" value="0.4 0.4 0.4"></a-variable>
+                    <a-variable name="textOffset" value="0 0.25 0"></a-variable>
+                    <a-variable name="defaultColor" value="#888888"></a-variable>
+                    <a-variable name="centerColor" value="#FF0000"></a-variable>
+                    <a-variable name="textColor" value="#FFFFFF"></a-variable>
 
-                <!-- import glb -->
-                <a-entity gltf-model="./assets/Character_Hotdog_01.glb" scale="0.5 0.5 0.5" position="0 -15 0" rotation="270 0 0"></a-entity>
-                
+                    <!-- Component to generate the grid -->
+                    <script>
+                        AFRAME.registerComponent('generate-grid', {
+                          schema: {}, // No properties needed from HTML attribute
+                          init: function () {
+                            const el = this.el; // The entity this component is attached to (<a-entity generate-grid>)
+                            const sceneEl = el.sceneEl; // The <a-scene> element
+                            // Safely get variables with defaults
+                            const cubeScale = sceneEl.systems.variable?.getVariable('cubeScale') || {x: 0.2, y: 0.2, z: 0.2};
+                            const textScale = sceneEl.systems.variable?.getVariable('textScale') || {x: 0.4, y: 0.4, z: 0.4};
+                            const textOffset = sceneEl.systems.variable?.getVariable('textOffset') || {x: 0, y: 0.25, z: 0};
+                            const defaultColor = sceneEl.systems.variable?.getVariable('defaultColor') || '#888888';
+                            const centerColor = sceneEl.systems.variable?.getVariable('centerColor') || '#FF0000';
+                            const textColor = sceneEl.systems.variable?.getVariable('textColor') || '#FFFFFF';
+                            console.log("Generating debug grid...");
+                            for (let x = -1; x <= 1; x++) {
+                              for (let y = -1; y <= 1; y++) {
+                                for (let z = -1; z <= 1; z++) {
+                                  const cube = document.createElement('a-box');
+                                  const isCenter = x === 0 && y === 0 && z === 0;
+                                  cube.setAttribute('position', `${x} ${y} ${z}`);
+                                  cube.setAttribute('scale', `${cubeScale.x} ${cubeScale.y} ${cubeScale.z}`);
+                                  cube.setAttribute('color', isCenter ? centerColor : defaultColor);
+                                  el.appendChild(cube);
+                                  const label = document.createElement('a-text');
+                                  const labelPos = `${x + textOffset.x} ${y + textOffset.y} ${z + textOffset.z}`;
+                                  label.setAttribute('value', `(${x},${y},${z})`);
+                                  label.setAttribute('position', labelPos);
+                                  label.setAttribute('scale', `${textScale.x} ${textScale.y} ${textScale.z}`);
+                                  label.setAttribute('color', textColor);
+                                  label.setAttribute('align', 'center');
+                                  label.setAttribute('side', 'double');
+                                  el.appendChild(label);
+                                }
+                              }
+                            }
+                            console.log("Debug grid generation complete.");
+                          }
+                        });
+                    </script>
+                    <a-entity generate-grid></a-entity> <!-- Attach the component here -->
+
+                </a-entity>
+                <!-- == Debug Grid End == -->
+
+                <!-- == Your Model - Added animation-mixer == -->
+                <a-entity id="hiro-model"
+                          gltf-model="./assets/gangdam-style.glb"
+                          scale="1 1 1"
+                          position="0 0 1"
+                          rotation="-90 0 0"
+                          animation-mixer="clip: *; loop: repeat; timeScale: 0">
+                </a-entity>
+                <!-- animation-mixer="clip: *; loop: repeat; timeScale: 0"> -->
+                <!-- IMPORTANT: Replace "YourAnimationName" with the actual clip name -->
+                <!--              e.g., "Idle", "Walk", "Run", "Take 001", "gangnam style" -->
+                <!-- Use '*' to try playing all animations -->
+                <!-- animation-mixer="clip: YourAnimationName; loop: repeat; timeScale: 0" -->
+                <!-- timeScale: 0 initially pauses it -->
+              
+                <!-- == Model End == -->
+
+                <!-- position="0 0 -1"  Up one Y  -->
+                 <!-- position="0 -1 0"  backwards on Z  -->
+                <!-- == Model End == -->
+
             </a-marker>
-            <!-- <a-entity camera></a-entity> -->
-            <a-entity camera fov="80"></a-entity>
 
-            <!-- <a-entity camera position="0 1.5 3" fov="80"></a-entity> -->
+            <!-- Matariki Marker - Still Commented Out -->
+            <!-- <a-marker id="matariki-marker" type="pattern" url="./assets/pattern-matariki.patt"> -->
+                <!-- <a-entity id="matariki-model" gltf-model="./assets/Character_Hotdog_01.glb" scale="0.1 0.1 0.1" position="0 0.8 0" rotation="-90 0 0"></a-entity> -->
+            <!-- </a-marker> -->
+
+            <!-- Camera -->
+            <a-entity camera fov="80" position="0 0 0"></a-entity>
+
         </a-scene>
     </div>
 
     <!-- Status Indicator -->
-    <div class="status-indicator">
-        <p id="status-message" class="text-sm font-medium">Waiting for marker...</p>
+    <div class="status-indicator" id="status-indicator-div">
+        <p id="status-message" class="font-medium">Waiting for marker...</p>
     </div>
 
     <!-- Audio Asset -->
-    <audio id="marker-audio" src="./assets/audio/9_Stars.mp3"></audio>
+    <audio id="marker-audio" src="./assets/audio/9_Stars.mp3" preload="auto"></audio>
 
+    <!-- Script -->
     <script>
-        document.querySelector("#ar-marker").addEventListener("markerFound", () => {
-            document.getElementById('status-message').textContent = "Marker detected! 🎯";
-            document.getElementById('status-message').classList.add('text-green-400');
+        const hiroMarker = document.querySelector("#hiro-marker");
+        const hiroModelEntity = document.getElementById('hiro-model'); // Get the model entity
+        const statusIndicatorDiv = document.getElementById('status-indicator-div');
+        const statusMessage = document.getElementById('status-message');
+        const markerAudio = document.getElementById("marker-audio");
+        const startARButton = document.getElementById("start-ar");
+        const mainContent = document.getElementById("main-content");
+        const arContainer = document.getElementById("ar-container");
+        const arScene = document.getElementById("ar-scene"); // Get the scene element
+        const body = document.body;
+        // state variables
+        let activeMarker = null;
+        let arjsInitialized = false; // Flag to prevent multiple initializations
+        let mixerReady = false; // Flag to check if mixer is ready
 
-            // Play audio when marker is detected
-            document.getElementById("marker-audio").play();
-        });
+        // === Listen for model loaded event ===
+        if (hiroModelEntity) {
+            hiroModelEntity.addEventListener('model-loaded', (event) => {
+                console.log('Hiro model loaded, animation mixer should be ready.', event.detail.model);
+                // Log available animation clip names
+                 const modelWithAnims = hiroModelEntity.getObject3D('mesh');
+                 if (modelWithAnims && modelWithAnims.animations && modelWithAnims.animations.length > 0) {
+                    console.log('Available animation clips:', modelWithAnims.animations.map(clip => clip.name));
+                 } else {
+                     console.warn('No animations found on the loaded model.');
+                 }
 
-        document.querySelector("#ar-marker").addEventListener("markerLost", () => {
-            document.getElementById('status-message').textContent = "Marker lost! 😞";
-            document.getElementById('status-message').classList.remove('text-green-400');
-        });
+                mixerReady = true;
+                const mixerComponent = hiroModelEntity.components['animation-mixer'];
+                if (mixerComponent) {
+                    // Set initial state based on marker visibility *at load time*
+                    mixerComponent.timeScale = hiroMarker?.object3D?.visible ? 1 : 0;
+                    console.log(`Model loaded. Marker visible: ${hiroMarker?.object3D?.visible}, initial timeScale: ${mixerComponent.timeScale}`);
+                } else {
+                    console.warn('Animation mixer component not found immediately after model-loaded.');
+                }
+            });
+            hiroModelEntity.addEventListener('componentchanged', (evt) => {
+                if (evt.detail.name === 'animation-mixer') {
+                    console.log('Animation mixer component initialized/changed.');
+                     if (!mixerReady) {
+                         mixerReady = true;
+                         console.log('Mixer ready via componentchanged.');
+                     }
+                     const mixerComponent = hiroModelEntity.components['animation-mixer'];
+                      if (mixerComponent) {
+                        // Ensure timescale matches current visibility when component is ready
+                         mixerComponent.timeScale = hiroMarker?.object3D?.visible ? 1 : 0;
+                         console.log(`Mixer component changed. Marker visible: ${hiroMarker?.object3D?.visible}, timeScale set to: ${mixerComponent.timeScale}`);
+                     }
+                }
+            });
 
-        document.getElementById("start-ar").addEventListener("click", function () {
-            document.getElementById("main-content").style.display = "none";
-            document.getElementById("ar-container").style.display = "block";
+        } else {
+             console.error("Could not find hiro-model entity to attach model-loaded listener.");
+        }
+
+        function markerFoundHandler(event) {
+            const markerId = event.target.id;
+            if (!activeMarker) { markerAudio.play().catch(e => console.error("Audio play failed:", e)); }
+            activeMarker = markerId;
+            statusMessage.textContent = `${markerId} detected! 🎯`;
+            if (statusIndicatorDiv) statusIndicatorDiv.style.backgroundColor = 'rgba(74, 222, 128, 0.8)';
+            console.log(`${markerId} found`);
+
+            // === FIXED: Added animation start logic ===
+            if (markerId === 'hiro-marker' && mixerReady && hiroModelEntity.components['animation-mixer']) {
+                 console.log("Playing animation for hiro-model");
+                 hiroModelEntity.components['animation-mixer'].timeScale = 1; // Set timeScale to 1 to play/resume
+            } else if (markerId === 'hiro-marker' && !mixerReady) {
+                 console.warn("Hiro marker found, but mixer not ready yet.");
+            }
+            // === END FIX ===
+        }
+
+        function markerLostHandler(event) {
+            const markerId = event.target.id;
+            if (activeMarker === markerId) {
+                activeMarker = null;
+                statusMessage.textContent = "Point camera at marker...";
+                 if (statusIndicatorDiv) statusIndicatorDiv.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
+                markerAudio.pause();
+                markerAudio.currentTime = 0;
+                console.log(`${markerId} lost`);
+
+                 // === FIXED: Added animation pause logic ===
+                if (markerId === 'hiro-marker' && mixerReady && hiroModelEntity.components['animation-mixer']) {
+                    console.log("Pausing animation for hiro-model");
+                    hiroModelEntity.components['animation-mixer'].timeScale = 0; // Set timeScale to 0 to pause
+                }
+                 // === END FIX ===
+            }
+        }
+
+        // We attach listeners only after AR is initialized
+         // Attach listeners only after AR is initialized
+         function attachMarkerListeners() {
+            const currentHiroMarker = document.querySelector("#hiro-marker");
+            if (currentHiroMarker) {
+                // Remove potentially old listeners before adding new ones
+                currentHiroMarker.removeEventListener("markerFound", markerFoundHandler);
+                currentHiroMarker.removeEventListener("markerLost", markerLostHandler);
+                // Add listeners
+                currentHiroMarker.addEventListener("markerFound", markerFoundHandler);
+                currentHiroMarker.addEventListener("markerLost", markerLostHandler);
+                console.log("Event listeners attached/re-attached to hiro-marker.");
+            } else {
+                 console.error("Hiro Marker element (#hiro-marker) not found after AR init!");
+                 setTimeout(() => {
+                     const delayedHiroMarker = document.querySelector("#hiro-marker");
+                     if (delayedHiroMarker) {
+                         delayedHiroMarker.removeEventListener("markerFound", markerFoundHandler); // Remove first
+                         delayedHiroMarker.removeEventListener("markerLost", markerLostHandler);
+                         delayedHiroMarker.addEventListener("markerFound", markerFoundHandler); // Add again
+                         delayedHiroMarker.addEventListener("markerLost", markerLostHandler);
+                         console.log("Event listeners attached to hiro-marker (delayed).");
+                     } else {
+                         console.error("Hiro Marker element (#hiro-marker) still not found!");
+                     }
+                 }, 1500);
+            }
+        }
+
+
+        startARButton.addEventListener("click", function () {
+            mainContent.style.display = "none";
+            arContainer.style.display = "block";
+            body.classList.add('overflow-hidden');
+
+            if (arScene && !arjsInitialized) {
+                 console.log("Initializing AR.js and requesting camera...");
+                 arScene.setAttribute('arjs', 'sourceType: webcam; trackingMethod: best; debugUIEnabled: true;');
+                 arjsInitialized = true;
+
+                 setTimeout(() => {
+                    attachMarkerListeners();
+
+                    if (statusIndicatorDiv) {
+                         statusIndicatorDiv.style.display = "block";
+                         const isVisible = hiroMarker?.object3D?.visible;
+                         if (isVisible) {
+                             // Manually trigger found handler if visible on start
+                             markerFoundHandler({ target: hiroMarker });
+                         } else {
+                             statusMessage.textContent = "Point camera at marker...";
+                             // Ensure animation is paused if marker not visible on start
+                             if(mixerReady && hiroModelEntity.components['animation-mixer']) {
+                                 hiroModelEntity.components['animation-mixer'].timeScale = 0;
+                             }
+                         }
+                         statusIndicatorDiv.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
+                    }
+                     console.log("AR Started, listeners attached.");
+
+                 }, 1000); // Increased delay slightly
+
+            } else if (arjsInitialized) {
+                 console.log("AR already initialized. Re-showing view.");
+                 if (statusIndicatorDiv) {
+                    statusIndicatorDiv.style.display = "block";
+                    const isVisible = hiroMarker?.object3D?.visible;
+                    statusMessage.textContent = isVisible ? `${hiroMarker.id} detected! 🎯` : "Point camera at marker...";
+                    statusIndicatorDiv.style.backgroundColor = isVisible ? 'rgba(74, 222, 128, 0.8)' : 'rgba(0, 0, 0, 0.6)';
+                    // Ensure animation state matches visibility if re-entering
+                    if(mixerReady && hiroModelEntity.components['animation-mixer']) {
+                       hiroModelEntity.components['animation-mixer'].timeScale = isVisible ? 1 : 0;
+                       console.log(`Re-entering AR. Marker visible: ${isVisible}, animation timeScale set to ${isVisible ? 1 : 0}`);
+                    }
+                 }
+            } else {
+                 console.error("AR Scene element not found!");
+            }
         });
     </script>
+
 </body>
 </html>

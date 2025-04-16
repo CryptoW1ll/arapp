@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>WebXR AR</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }        
+    </style>
+    <script type="importmap">
+    {
+        "imports": {
+        "three": "https://unpkg.com/three@0.149.0/build/three.module.js"
+        }
+    }
+    </script>
+    <script>
+        (function() {
+            
+            if (typeof window.MINDAR === 'undefined') {
+                window.MINDAR = { IMAGE: {} };
+            }
+            window.MINDAR.IMAGE.MindARThree = window.MINDAR.IMAGE.MindARThree || function() {
+                return new Promise((resolve) => {                   
+                    const script = document.createElement('script');
+                    script.src = 'https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.2/dist/mindar-image-three.prod.js';
+                    script.onload = () => {
+                        console.log('MindARThree loaded');
+                        resolve(MindARThree); // Resolve with the locally scoped MindARThree
+                    };
+                   document.head.appendChild(script);
+                });
+            };
+           
+        })();
+    </script>
+
+
+
+
+</head>
+<body>
+    <button id="start-ar-button" style="position: absolute; top: 20px; left: 50%; transform: translateX(-50%); z-index: 1000;">Start AR</button>
+    <script type="module">
+
+        import * as THREE from 'three';
+        document.addEventListener('DOMContentLoaded', () => {
+            const start = async () => {
+                // Wait for MindARThree to load and get the class
+                const MindARThreeClass = await window.MINDAR.IMAGE.MindARThree(); 
+
+                // Now, initialize mindarThree using the captured class
+                const mindarThree = new MindARThreeClass({
+                    container: document.body,
+                    imageTargetSrc: './assets/pattern-hiro.mind'
+                ,showStats: true});
+                const { renderer, scene, camera } = mindarThree;
+
+                const geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
+                const material = new THREE.MeshNormalMaterial();
+                const cube = new THREE.Mesh(geometry, material);
+
+                // Create an anchor (a position and orientation)
+                const anchor = mindarThree.addAnchor(0);
+                anchor.group.add(cube);
+
+                // Add a light to the scene
+                const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
+                light.position.set(0.5, 1, 0.25);
+                scene.add(light);
+
+                cube.visible = false;
+
+                anchor.onTargetFound = () => {
+                    console.log("Marker detected!");
+                    cube.visible = true;
+                };
+                anchor.onTargetLost = () => {
+                    console.log("Marker lost!");
+                    cube.visible = false;
+                };
+
+                // Modify this part:
+                const startAR = async () => {
+                    console.log("Attempting to start AR session...");
+                    await mindarThree.start();
+                    console.log("AR session started!");
+        
+                    renderer.xr.addEventListener('sessionstart', () => {
+                        console.log('WebXR session started successfully!');
+                    });
+        
+                    renderer.setAnimationLoop(() => {
+                        console.log("Rendering AR frame..."); // Add this log
+                        cube.rotation.x += 0.01;
+                        cube.rotation.y += 0.01;
+                        renderer.render(scene, camera);
+                    });
+                };
+        
+                 // Get the button and attach the listener *inside* the DOMContentLoaded callback:
+                 const startButton = document.getElementById('start-ar-button');
+                 if (startButton) {
+                     startButton.addEventListener('click', () => {
+                         console.log("Start AR button clicked!"); // Added log
+                         startAR();
+                     });
+                 } else {
+                     console.error("Start AR button not found!"); // Handle case where button is missing
+                 }
+                 
+                // Optionally, remove this line:
+                // await mindarThree.start(); 
+        
+            };
+            start();
+        });
+    </script>
+</body>
+</html>
