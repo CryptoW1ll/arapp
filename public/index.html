@@ -58,8 +58,8 @@
             <a-marker id="hiro-marker" preset="hiro">
 
                 <!-- == Debug Grid Start == -->
-                <a-entity id="debug-position-grid">
-                    <!-- Variables for grid appearance -->
+                <!-- <a-entity id="debug-position-grid">
+
                     <a-variable name="cubeScale" value="0.2 0.2 0.2"></a-variable>
                     <a-variable name="textScale" value="0.4 0.4 0.4"></a-variable>
                     <a-variable name="textOffset" value="0 0.25 0"></a-variable>
@@ -67,7 +67,7 @@
                     <a-variable name="centerColor" value="#FF0000"></a-variable>
                     <a-variable name="textColor" value="#FFFFFF"></a-variable>
 
-                    <!-- Component to generate the grid -->
+         
                     <script>
                         AFRAME.registerComponent('generate-grid', {
                           schema: {}, // No properties needed from HTML attribute
@@ -107,16 +107,16 @@
                           }
                         });
                     </script>
-                    <a-entity generate-grid></a-entity> <!-- Attach the component here -->
+                    <a-entity generate-grid></a-entity>
 
-                </a-entity>
+                </a-entity> -->
                 <!-- == Debug Grid End == -->
 
                 <!-- == Your Model - Added animation-mixer == -->
                 <a-entity id="hiro-model"
                           gltf-model="./assets/gangdam-style.glb"
-                          scale="1 1 1"
-                          position="0 0 1"
+                          scale="3 3 3"
+                          position="0 0 3"
                           rotation="-90 0 0"
                           animation-mixer="clip: *; loop: repeat; timeScale: 0">
                 </a-entity>
@@ -175,22 +175,19 @@
         if (hiroModelEntity) {
             hiroModelEntity.addEventListener('model-loaded', (event) => {
                 console.log('Hiro model loaded, animation mixer should be ready.', event.detail.model);
-                // Log available animation clip names
-                 const modelWithAnims = hiroModelEntity.getObject3D('mesh');
-                 if (modelWithAnims && modelWithAnims.animations && modelWithAnims.animations.length > 0) {
+                const modelWithAnims = hiroModelEntity.getObject3D('mesh');
+                if (modelWithAnims && modelWithAnims.animations && modelWithAnims.animations.length > 0) {
                     console.log('Available animation clips:', modelWithAnims.animations.map(clip => clip.name));
-                 } else {
-                     console.warn('No animations found on the loaded model.');
-                 }
-
-                mixerReady = true;
-                const mixerComponent = hiroModelEntity.components['animation-mixer'];
-                if (mixerComponent) {
-                    // Set initial state based on marker visibility *at load time*
-                    mixerComponent.timeScale = hiroMarker?.object3D?.visible ? 1 : 0;
-                    console.log(`Model loaded. Marker visible: ${hiroMarker?.object3D?.visible}, initial timeScale: ${mixerComponent.timeScale}`);
+                    setTimeout(() => {
+                        const mixerComponent = hiroModelEntity.components['animation-mixer'];
+                        if (mixerComponent) {
+                            mixerReady = true;
+                            console.log('Animation mixer ready, setting initial state');
+                            mixerComponent.clipAction(modelWithAnims.animations[0]).play(); // Explicitly play the first animation
+                        }
+                    }, 500);
                 } else {
-                    console.warn('Animation mixer component not found immediately after model-loaded.');
+                    console.warn('No animations found on the loaded model.');
                 }
             });
             hiroModelEntity.addEventListener('componentchanged', (evt) => {
@@ -223,8 +220,8 @@
 
             // === FIXED: Added animation start logic ===
             if (markerId === 'hiro-marker' && mixerReady && hiroModelEntity.components['animation-mixer']) {
-                 console.log("Playing animation for hiro-model");
-                 hiroModelEntity.components['animation-mixer'].timeScale = 1; // Set timeScale to 1 to play/resume
+                 console.log("Playing animation for hiro-model"); // Confirming animation play
+                 hiroModelEntity.setAttribute('animation-mixer', 'clip: *; loop: repeat; timeScale: 1'); // Set timeScale to 1 to play/resume
             } else if (markerId === 'hiro-marker' && !mixerReady) {
                  console.warn("Hiro marker found, but mixer not ready yet.");
             }
@@ -243,8 +240,8 @@
 
                  // === FIXED: Added animation pause logic ===
                 if (markerId === 'hiro-marker' && mixerReady && hiroModelEntity.components['animation-mixer']) {
-                    console.log("Pausing animation for hiro-model");
-                    hiroModelEntity.components['animation-mixer'].timeScale = 0; // Set timeScale to 0 to pause
+                    console.log("Pausing animation for hiro-model"); // Confirming animation pause
+                    hiroModelEntity.setAttribute('animation-mixer', 'clip: *; loop: repeat; timeScale: 0'); // Set timeScale to 0 to pause
                 }
                  // === END FIX ===
             }
